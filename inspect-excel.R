@@ -23,6 +23,9 @@ parser$add_argument("--tocsv",
 parser$add_argument("--sheet",
                     default = 1,
                     help = "sheet to read in. accepts the sheet name or its position (default: 1).")
+parser$add_argument("--cols",
+                    action = "store_true", default = FALSE,
+                    help = "display the column names of the file. (no flag defaults to FALSE).")
 parser$add_argument("--skip",
                     type = "integer", default = 0,
                     help = "number of rows to skip (default: 0).")
@@ -41,25 +44,34 @@ if (args$show_sheets) {
 
 }
 
+
+if (!is.na(suppressWarnings(as.integer(args$sheet)))) {
+  sheet_name <- as.numeric(args$sheet)
+} else {
+  sheet_name <- args$sheet
+}
+
+data <-  read_excel(path.expand(args$file),
+             skip = args$skip,
+             sheet = sheet_name,
+             col_types = "text") # guess as char to avoid potential errors related to setting `guess_max`
+
+if (args$cols) {
+    cat("\n")
+    print(glue("showing the column names from sheet {sheet_name}"))
+    cat("\n")
+    data %>% names() %>%
+     write.table(file = "", sep = "|", quote = FALSE)
+} 
+
 if (args$tocsv) {
-
-  if (!is.na(suppressWarnings(as.integer(args$sheet)))) {
-    sheet_name <- as.numeric(args$sheet)
-  } else {
-    sheet_name <- args$sheet
-  }
-
   cat("\n")
   print(glue("showing {args$n} rows from sheet {sheet_name} after skipping {args$skip}"))
   cat("\n")
-  read_excel(path.expand(args$file),
-             skip = args$skip,
-             sheet = sheet_name,
-             col_types = "text") %>%  # guess as char to avoid potential errors related to setting `guess_max`
-    head(n = args$n) %>%
-    write.table(file = "", sep = "|", quote = FALSE)
+  data %>%  
+     head(n = args$n) %>%
+     write.table(file = "", sep = "|", quote = FALSE)
   cat("\n")
-
 }
 
 # done.
